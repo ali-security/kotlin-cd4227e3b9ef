@@ -332,7 +332,7 @@ tasks {
     }
 
     testLifecycleTask("jvmCodegenTest", QualityGate.Master) {
-        dependsOn(":compiler:fir:fir2ir:aggregateTests")
+        dependsOn(":compiler:jvm.tests:aggregateTests")
     }
 
     testLifecycleTask("testsForBootstrapBuildTest", QualityGate.Master) {
@@ -525,7 +525,7 @@ tasks {
     }
 
     testLifecycleTask("nightlyFirCompilerTest", QualityGate.Nightly) {
-        dependsOn(":compiler:fir:fir2ir:nightlyTests")
+        dependsOn(":compiler:jvm.tests:nightlyTests")
         dependsOn(":compiler:fastJarFSLongTests")
     }
 
