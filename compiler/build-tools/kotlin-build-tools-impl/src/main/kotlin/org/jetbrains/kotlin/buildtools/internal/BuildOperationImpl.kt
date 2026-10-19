@@ -21,7 +21,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 @Serializable
 internal abstract class BuildOperationImpl<R> : BuildOperation<R>, BuildOperation.Builder, BtaSerializable {
 
-    protected abstract val options: Options // to be removed when subclasses are also converted to serializable
+    protected open val options: Options get() = Options(this::class) // to be removed when subclasses are also converted to serializable
 
     @Transient
     internal var metricsCollector: BuildMetricsCollector? = null
