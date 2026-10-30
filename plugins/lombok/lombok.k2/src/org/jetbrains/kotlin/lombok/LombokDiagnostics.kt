@@ -59,6 +59,7 @@ import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_DEFAULT_INITIALI
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_DEFAULT_AND_SINGULAR_MIXED
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_FIELD_ANNOTATION_ON_BODY_PROPERTY
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_PROPERTY_NOT_INCLUDED
+import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_PROPERTY_NOT_INCLUDED_ERROR
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_REQUIRES_EXPLICIT_RETURN_TYPE
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_REQUIRES_PRIMARY_CONSTRUCTOR
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.BUILDER_WITH_RECEIVER_OR_CONTEXT_PARAMETERS
@@ -68,7 +69,6 @@ import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.CANNOT_SINGULARIZE_NAME
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.COMPANION_OBJECT_SERIALIZABLE_CONFLICT
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.UNSUPPORTED_SINGULAR_TYPE
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.SINGULAR_REQUIRES_GUAVA
-import org.jetbrains.kotlin.lombok.checkers.FirLombokBuilderChecker.NotIncludedReason
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
@@ -129,6 +129,7 @@ object LombokFirDiagnostics : KtDiagnosticsContainer() {
     val BUILDER_DEFAULT_AND_SINGULAR_MIXED by error0<KtAnnotationEntry>()
     val BUILDER_FIELD_ANNOTATION_ON_BODY_PROPERTY by strongWarning1<KtAnnotationEntry, String>()
     val BUILDER_PROPERTY_NOT_INCLUDED by strongWarning2<KtNamedDeclaration, Name, NotIncludedReason>(SourceElementPositioningStrategies.DECLARATION_NAME)
+    val BUILDER_PROPERTY_NOT_INCLUDED_ERROR by strongWarning2<KtNamedDeclaration, Name, NotIncludedReason>(SourceElementPositioningStrategies.DECLARATION_NAME)
     val BUILDER_REQUIRES_EXPLICIT_RETURN_TYPE by error0<KtAnnotationEntry>()
     val BUILDER_REQUIRES_PRIMARY_CONSTRUCTOR by error1<KtAnnotationEntry, Name>()
     val BUILDER_WITH_RECEIVER_OR_CONTEXT_PARAMETERS by error0<KtAnnotationEntry>()
@@ -139,6 +140,25 @@ object LombokFirDiagnostics : KtDiagnosticsContainer() {
     val SINGULAR_REQUIRES_GUAVA by error1<KtAnnotationEntry, FqName>()
 
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = LombokFirDiagnosticsMessages
+
+    enum class NotIncludedReason(private val message: String) {
+        CLASS_PROPERTY_IN_PRESENCE_OF_PARAMETERS(
+            "builder fields are generated from the primary constructor''s value parameters. " +
+                    "To make the property a builder field, declare it in the primary constructor. " +
+                    "You may also move @Builder annotation from the class to its constructor to avoid this warning"
+        ),
+        VAL_BODY_PROPERTY(
+            "builder fields are generated from the mutable properties if there are no primary constructor parameters. " +
+                    "To make the property a builder field, declare it in the primary constructor or change it to be a mutable property"
+        ),
+        HAS_IMPLICIT_RETURN_TYPE(
+            "its type must not be implicit. " +
+                    "Specify a type explicitly to include property in builder."
+        ),
+        ;
+
+        override fun toString(): String = message
+    }
 }
 
 object LombokCliDiagnosticsMessages : BaseSourcelessDiagnosticRendererFactory() {
@@ -285,6 +305,12 @@ object LombokFirDiagnosticsMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             BUILDER_PROPERTY_NOT_INCLUDED,
+            "Property ''{0}'' is not included in the builder: {1}.",
+            CommonRenderers.NAME,
+            TO_STRING,
+        )
+        map.put(
+            BUILDER_PROPERTY_NOT_INCLUDED_ERROR,
             "Property ''{0}'' is not included in the builder: {1}.",
             CommonRenderers.NAME,
             TO_STRING,

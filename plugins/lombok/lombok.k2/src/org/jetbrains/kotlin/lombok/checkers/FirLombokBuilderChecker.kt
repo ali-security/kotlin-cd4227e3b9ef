@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.lombok.LombokFirDiagnostics
+import org.jetbrains.kotlin.lombok.LombokFirDiagnostics.NotIncludedReason
 import org.jetbrains.kotlin.lombok.LombokNames
 import org.jetbrains.kotlin.lombok.config.ConeLombokAnnotations
 import org.jetbrains.kotlin.lombok.config.LombokService
@@ -182,14 +183,19 @@ object FirLombokBuilderChecker : FirRegularClassChecker(MppCheckerKind.Platform)
                 !property.hasBackingField -> null
                 name in parameterNames -> null
                 property.isStatic -> null
-                !buildsFromBodyProperties -> NotIncludedReason.BODY_PROPERTY_IN_PRESENCE_OF_PARAMETERS
+                !buildsFromBodyProperties -> NotIncludedReason.CLASS_PROPERTY_IN_PRESENCE_OF_PARAMETERS
                 property.isVal -> NotIncludedReason.VAL_BODY_PROPERTY
                 !property.hasExplicitReturnType -> NotIncludedReason.HAS_IMPLICIT_RETURN_TYPE
                 else -> null
             }
 
             if (whyNotIncluded != null) {
-                reporter.reportOn(property.source, LombokFirDiagnostics.BUILDER_PROPERTY_NOT_INCLUDED, name, whyNotIncluded, context)
+                val diagnostic = if (whyNotIncluded == HAS_IMPLICIT_RETURN_TYPE) {
+                    LombokFirDiagnostics.BUILDER_PROPERTY_NOT_INCLUDED_ERROR
+                } else {
+                    LombokFirDiagnostics.BUILDER_PROPERTY_NOT_INCLUDED
+                }
+                reporter.reportOn(property.source, diagnostic, name, whyNotIncluded, context)
                 return@processAllDeclarations
             }
 
@@ -199,24 +205,6 @@ object FirLombokBuilderChecker : FirRegularClassChecker(MppCheckerKind.Platform)
                 reporter.reportOn(initializer.source, LombokFirDiagnostics.BUILDER_DEFAULT_INITIALIZER_USES_INSTANCE, context)
             }
         }
-    }
-
-    enum class NotIncludedReason(val s: String) {
-        BODY_PROPERTY_IN_PRESENCE_OF_PARAMETERS(
-            "a Kotlin class builds out of its primary constructor''s value parameters. " +
-                    "To make it a builder field, declare it in the primary constructor"
-        ),
-        VAL_BODY_PROPERTY(
-            "a Kotlin class builds out of its mutable properties if there is no primary constructor parameters. " +
-                    "To make it a builder field, declare it in the primary constructor or change it to be a mutable property"
-        ),
-        HAS_IMPLICIT_RETURN_TYPE(
-            "its type is implicit and cannot be resolved before the builder is generated. " +
-                    "To make it possible, specify its type explicitly"
-        ),
-        ;
-
-        override fun toString(): String = s
     }
 
     /** Whether [this] expression reads a `this` of [classSymbol], explicitly or as an implicit receiver. */

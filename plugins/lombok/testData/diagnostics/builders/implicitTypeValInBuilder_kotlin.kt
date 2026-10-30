@@ -26,11 +26,11 @@ import lombok.Builder
 // A read-only property is never a builder field, so its implicit type is not reported
 @Builder
 class Entity {
-    val <!BUILDER_PROPERTY_NOT_INCLUDED("id; a Kotlin class builds out of its mutable properties if there is no primary constructor parameters. To make it a builder field, declare it in the primary constructor or change it to be a mutable property")!>id<!> = 42
+    val <!BUILDER_PROPERTY_NOT_INCLUDED("id; builder fields are generated from the mutable properties if there are no primary constructor parameters. To make the property a builder field, declare it in the primary constructor or change it to be a mutable property")!>id<!> = 42
     val <!BUILDER_PROPERTY_NOT_INCLUDED!>tags<!> = emptyList<String>()
     val <!BUILDER_PROPERTY_NOT_INCLUDED!>explicit<!>: String = ""
     var title: String = ""
-    var <!BUILDER_PROPERTY_NOT_INCLUDED!>counter<!> = 0
+    var <!BUILDER_PROPERTY_NOT_INCLUDED_ERROR!>counter<!> = 0
 }
 
 // The builder is built out of the primary constructor, so body properties are not builder fields at all

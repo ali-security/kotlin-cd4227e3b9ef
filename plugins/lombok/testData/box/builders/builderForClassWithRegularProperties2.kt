@@ -12,7 +12,7 @@ class Mutable {
         get() = 2 * field
         set(arg) { field = 2 * arg }
 
-    var <!BUILDER_PROPERTY_NOT_INCLUDED!>w<!> = 0
+    var w: Int = 0
 
     private var y: String by Delegates.observable("") { _, _, _ ->
         w++
