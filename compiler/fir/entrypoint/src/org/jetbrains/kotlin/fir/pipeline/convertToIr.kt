@@ -43,6 +43,7 @@ import org.jetbrains.kotlin.ir.util.KotlinMangler
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.ir.validation.*
 import org.jetbrains.kotlin.ir.validation.checkers.IrNestedOffsetRangeChecker
+import org.jetbrains.kotlin.ir.validation.checkers.declaration.IrAnnotationUsageChecker
 import org.jetbrains.kotlin.ir.validation.checkers.declaration.IrClassSuperTypesChecker
 import org.jetbrains.kotlin.ir.validation.checkers.declaration.IrExpressionBodyInFunctionChecker
 import org.jetbrains.kotlin.ir.validation.checkers.declaration.IrFieldVisibilityChecker
@@ -541,6 +542,11 @@ private class Fir2IrPipeline(
                     // Serializing IrExpressionBody in IrFunction.body is not supported.
                     withCheckers(IrExpressionBodyInFunctionChecker)
                 }
+                .applyIf(validateForKlibSerialization) {
+                    // Annotations nested in annotation arguments  are serialized as ordinary constructor calls,
+                    // and are deserialized back as IrAnnotation only if they were IrAnnotation in the first place.
+                    withCheckers(IrAnnotationUsageChecker)
+                }
                 .applyIf(validateForKlibSerialization && languageVersionSettings.supportsFeature(LanguageFeature.IrRichCallableReferencesInKlibs)) {
                     // Only rich callable references are serialized to KLIBs, legacy ones must not reach the serializer.
                     withCheckers(IrLegacyCallableReferenceChecker)
@@ -561,6 +567,7 @@ private class Fir2IrPipeline(
                         is IrValidationError.Cause.UnboundSymbol -> IrValidationSeverity.ERROR
                         is IrExpressionBodyInFunctionChecker -> IrValidationSeverity.ERROR
                         is IrFieldVisibilityChecker -> IrValidationSeverity.ERROR
+                        is IrAnnotationUsageChecker -> IrValidationSeverity.ERROR
                         is IrLegacyCallableReferenceChecker -> IrValidationSeverity.ERROR
                         is IrCrossFileFieldUsageChecker ->
                             if (languageVersionSettings.supportsFeature(LanguageFeature.ForbidCrossFileIrFieldAccessInKlibs))
