@@ -2057,6 +2057,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("FirErrors") {
         val NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED by warning<PsiElement> {
             parameter<ConeKotlinType>("type")
         }
+        val NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED_STRICT by warning<PsiElement> {
+            parameter<ConeKotlinType>("type")
+        }
         val UNSAFE_CAST_RELYING_ON_NULL by warning<KtBinaryExpressionWithTypeRHS>(PositioningStrategy.OPERATOR)
         val SAFE_CAST_RELYING_ON_NULL by warning<KtBinaryExpressionWithTypeRHS>(PositioningStrategy.OPERATOR)
         val CAST_NEVER_SUCCEEDS by warning<KtBinaryExpressionWithTypeRHS>(PositioningStrategy.OPERATOR)

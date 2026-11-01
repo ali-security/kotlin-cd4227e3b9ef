@@ -4985,6 +4985,12 @@ internal class NewCheckForErasedBecameNotErasedImpl(
     token: KaLifetimeToken,
 ) : KaAbstractFirDiagnostic<PsiElement>(firDiagnostic, token), KaFirDiagnostic.NewCheckForErasedBecameNotErased
 
+internal class NewCheckForErasedBecameNotErasedStrictImpl(
+    override val type: KaType,
+    firDiagnostic: KtDiagnosticWithSource,
+    token: KaLifetimeToken,
+) : KaAbstractFirDiagnostic<PsiElement>(firDiagnostic, token), KaFirDiagnostic.NewCheckForErasedBecameNotErasedStrict
+
 internal class UnsafeCastRelyingOnNullImpl(
     firDiagnostic: KtDiagnosticWithSource,
     token: KaLifetimeToken,

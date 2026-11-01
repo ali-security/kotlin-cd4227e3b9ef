@@ -2159,6 +2159,13 @@ private fun KaDiagnosticConverterBuilder.addConversions42() {
             token,
         )
     }
+    add(FirErrors.NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED_STRICT) { firDiagnostic ->
+        NewCheckForErasedBecameNotErasedStrictImpl(
+            firSymbolBuilder.typeBuilder.buildKtType(firDiagnostic.a),
+            firDiagnostic as KtDiagnosticWithSource,
+            token,
+        )
+    }
     add(FirErrors.OPERATOR_RENAMED_ON_IMPORT) { firDiagnostic ->
         OperatorRenamedOnImportImpl(
             firDiagnostic as KtDiagnosticWithSource,

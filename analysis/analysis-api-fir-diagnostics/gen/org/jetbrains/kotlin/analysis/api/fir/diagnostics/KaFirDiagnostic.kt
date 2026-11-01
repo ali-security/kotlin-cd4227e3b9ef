@@ -7050,6 +7050,15 @@ public interface KaFirDiagnostic<PSI : PsiElement> : KaDiagnosticWithPsi<PSI> {
 
     @KaUnstableDiagnosticApi
     @SubclassOptInRequired(KaImplementationDetail::class)
+    public interface NewCheckForErasedBecameNotErasedStrict : KaFirDiagnostic<PsiElement> {
+        override val diagnosticClass: KClass<NewCheckForErasedBecameNotErasedStrict>
+            get() = NewCheckForErasedBecameNotErasedStrict::class
+
+        public val type: KaType
+    }
+
+    @KaUnstableDiagnosticApi
+    @SubclassOptInRequired(KaImplementationDetail::class)
     public interface UnsafeCastRelyingOnNull : KaFirDiagnostic<KtBinaryExpressionWithTypeRHS> {
         override val diagnosticClass: KClass<UnsafeCastRelyingOnNull>
             get() = UnsafeCastRelyingOnNull::class

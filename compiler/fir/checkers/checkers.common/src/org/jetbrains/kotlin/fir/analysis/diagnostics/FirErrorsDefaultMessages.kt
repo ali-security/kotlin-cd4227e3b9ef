@@ -161,6 +161,7 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.CANNOT_CHANGE_ACC
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.CANNOT_CHECK_FOR_ERASED
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEW_CHECK_FOR_ERASED_BECAME_ERASED
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED
+import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED_STRICT
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.UNSTABLE_SMART_CAST_DUE_TO_OLD_BARE_INFERENCE
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.CANNOT_INFER_IT_PARAMETER_TYPE
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.CANNOT_INFER_PARAMETER_TYPE
@@ -3865,6 +3866,11 @@ object FirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED,
+            "The type ''{0}'' will no longer be considered erased in a future release, and this check will become allowed.",
+            RENDER_TYPE,
+        )
+        map.put(
+            NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED_STRICT,
             "The type ''{0}'' will no longer be considered erased in a future release, and this check will become allowed.",
             RENDER_TYPE,
         )

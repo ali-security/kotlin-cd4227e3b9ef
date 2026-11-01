@@ -190,7 +190,7 @@ fun findStaticallyKnownSubtype(
  * to be equal to the bounds of the original one ([requireEqualBounds] is `false`).
  */
 context(context: CheckerContext)
-fun isCastErasedByTypeParameterInheritance(supertype: ConeKotlinType, subtype: ConeKotlinType): Boolean {
+fun isCastErasedByTypeParameterInheritance(supertype: ConeKotlinType, subtype: ConeKotlinType): Pair<Boolean, Boolean> {
     val typeContext = context.session.typeContext
 
     val isNonReifiedTypeParameter = subtype.isNonReifiedTypeParameter()
@@ -202,7 +202,7 @@ fun isCastErasedByTypeParameterInheritance(supertype: ConeKotlinType, subtype: C
         val nullableToDefinitelyNotNull =
             !subtype.canBeNull() && supertype.withNullability(nullable = false, typeContext) == subtype
         if (!nullableToDefinitelyNotNull) {
-            return true
+            return true to true
         }
     }
 
@@ -215,22 +215,22 @@ fun isCastErasedByTypeParameterInheritance(supertype: ConeKotlinType, subtype: C
     }
 
     // if it is a upcast, it's never erased
-    if (isUpcast) return false
+    if (isUpcast) return false to false
 
     // downcasting to a non-reified type parameter is always erased
-    if (isNonReifiedTypeParameter) return true
+    if (isNonReifiedTypeParameter) return true to true
     // downcasting to a reified type parameter is never erased
-    else if (subtype is ConeTypeParameterType) return false
+    else if (subtype is ConeTypeParameterType) return false to false
 
-    val regularClassSymbol = subtype.toRegularClassSymbol() ?: return true
+    val regularClassSymbol = subtype.toRegularClassSymbol() ?: return true to true
 
     val outerClasses = regularClassSymbol.getClassAndItsOuterClassesWhenLocal(context.session)
 
     if (regularClassSymbol.isLocal && regularClassSymbol.typeParameterSymbols.any { it.containingDeclarationSymbol !in outerClasses }) {
-        return true
+        return true to true
     }
 
-    val staticallyKnownSubtype = findStaticallyKnownSubtypeByTypeParameterInheritance(supertype, regularClassSymbol)
+    val [staticallyKnownSubtype, staticallyKnownSubtypeStrict] = findStaticallyKnownSubtypeByTypeParameterInheritance(supertype, regularClassSymbol)
 
     // If the type we calculated is a subtype of the cast target, it's OK to use the cast target instead.
     // If not, it's wrong to use it
@@ -241,6 +241,14 @@ fun isCastErasedByTypeParameterInheritance(supertype: ConeKotlinType, subtype: C
             dnnTypesEqualToFlexible = false
         ),
         staticallyKnownSubtype,
+        subtype
+    ) to !AbstractTypeChecker.isSubtypeOf(
+        context.session.typeContext.newTypeCheckerState(
+            errorTypesEqualToAnything = true,
+            stubTypesEqualToAnything = false,
+            dnnTypesEqualToFlexible = false
+        ),
+        staticallyKnownSubtypeStrict,
         subtype
     )
 }
@@ -257,22 +265,37 @@ context(context: CheckerContext)
 private fun findStaticallyKnownSubtypeByTypeParameterInheritance(
     supertype: ConeKotlinType,
     subTypeClassSymbol: FirRegularClassSymbol,
-): ConeKotlinType {
+): Pair<ConeKotlinType, ConeKotlinType> {
     assert(!supertype.isMarkedNullable) { "This method only makes sense for non-nullable types" }
 
     if (supertype is ConeClassLikeType && supertype.toSymbol() == subTypeClassSymbol) {
-        return supertype
+        return supertype to supertype
     }
 
     val knownArguments = context.session.staticallyKnownTypeArgumentsByTypeParameterInheritance(
+        subTypeClassSymbol,
+        supertype,
+        requireEqualBounds = false,
+        requireFullInference = false
+    )
+
+    val knownArgumentsStrict = context.session.staticallyKnownTypeArgumentsByTypeParameterInheritance(
         subTypeClassSymbol,
         supertype,
         requireEqualBounds = true,
         requireFullInference = false
     )
 
-    if (knownArguments == null) {
-        return subTypeClassSymbol.constructType(Array(subTypeClassSymbol.typeParameterSymbols.size) { ConeStarProjection })
+    val type = if (knownArguments == null) {
+        subTypeClassSymbol.constructType(Array(subTypeClassSymbol.typeParameterSymbols.size) { ConeStarProjection })
+    } else {
+        subTypeClassSymbol.constructType(knownArguments)
+    }
+
+    val typeStrict = if (knownArgumentsStrict == null) {
+        subTypeClassSymbol.constructType(Array(subTypeClassSymbol.typeParameterSymbols.size) { ConeStarProjection })
+    } else {
+        subTypeClassSymbol.constructType(knownArgumentsStrict)
     }
 
     // If some arguments are not statically known, it means that these arguments are lost,
@@ -285,7 +308,7 @@ private fun findStaticallyKnownSubtypeByTypeParameterInheritance(
 //        }
 //    }
 
-    return subTypeClassSymbol.constructType(knownArguments)
+    return type to typeStrict
 }
 
 fun ConeKotlinType.isNonReifiedTypeParameter(): Boolean {

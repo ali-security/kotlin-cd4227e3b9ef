@@ -108,9 +108,17 @@ object FirCastOperatorsChecker : FirTypeOperatorCallChecker(MppCheckerKind.Commo
         }
 
         val oldErased = isCastErased(lhsType, r)
-        val newErased = isCastErasedByTypeParameterInheritance(lhsType, r)
+        val [newErased, newErasedStrict] = isCastErasedByTypeParameterInheritance(lhsType, r)
         when {
-            oldErased == newErased -> {}
+            oldErased == newErased -> {
+                if (newErasedStrict) {
+                    reporter.reportOn(
+                        expression.conversionTypeRef.source,
+                        FirErrors.NEW_CHECK_FOR_ERASED_BECAME_NOT_ERASED_STRICT,
+                        rUserType,
+                    )
+                }
+            }
             newErased -> reporter.reportOn(
                 expression.conversionTypeRef.source,
                 FirErrors.NEW_CHECK_FOR_ERASED_BECAME_ERASED,
