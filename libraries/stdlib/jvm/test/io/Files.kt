@@ -17,12 +17,14 @@ class FilesTest {
     private val isBackslashSeparator = File.separatorChar == '\\'
 
 
+    @Suppress("DEPRECATION")
     @Test fun testPath() {
         val fileSuf = System.currentTimeMillis().toString()
         val file1 = createTempFile("temp", fileSuf)
         assertTrue(file1.path.endsWith(fileSuf), file1.path)
     }
 
+    @Suppress("DEPRECATION")
     @Test fun testCreateTempDir() {
         val dirSuf = System.currentTimeMillis().toString()
         val dir1 = createTempDir("temp", dirSuf)
@@ -42,6 +44,7 @@ class FilesTest {
         dir3.delete()
     }
 
+    @Suppress("DEPRECATION")
     @Test fun testCreateTempFile() {
         val fileSuf = System.currentTimeMillis().toString()
         val file1 = createTempFile("temp", fileSuf)
@@ -61,6 +64,19 @@ class FilesTest {
         file3.delete()
     }
 
+    @Test fun tempFileFunctionsAreDeprecated() {
+        // createTempDir/createTempFile may create entries readable by all users when placed
+        // in the shared default temp directory, so their callers must be warned (CVE-2020-29582).
+        val facade = Class.forName("kotlin.io.FilesKt")
+        for (name in listOf("createTempDir", "createTempFile")) {
+            val method = facade.getMethod(name, String::class.java, String::class.java, File::class.java)
+            val deprecated = assertNotNull(method.getAnnotation(kotlin.Deprecated::class.java), "$name should be deprecated")
+            assertEquals(DeprecationLevel.WARNING, deprecated.level)
+            assertTrue(deprecated.message.contains("permissions"), deprecated.message)
+        }
+    }
+
+    @Suppress("DEPRECATION")
     @Test fun listFilesWithFilter() {
         val dir = createTempDir("temp")
 
@@ -366,7 +382,7 @@ class FilesTest {
     }
 
     @Test fun writeReadText() {
-        val file = createTempFile()
+        val file = @Suppress("DEPRECATION") createTempFile()
         try {
             val expected = String(CharArray(DEFAULT_BUFFER_SIZE * 2) { Random.nextInt(0, 1024).toChar() })
             file.writeText(expected)
@@ -391,7 +407,7 @@ class FilesTest {
     }
 
     @Test fun writeReadBytes() {
-        val file = createTempFile()
+        val file = @Suppress("DEPRECATION") createTempFile()
         try {
             val expected = Random.nextBytes(DEFAULT_BUFFER_SIZE * 4)
             file.writeBytes(expected)
@@ -427,8 +443,8 @@ class FilesTest {
     }
 
     @Test fun testCopyTo() {
-        val srcFile = createTempFile()
-        val dstFile = createTempFile()
+        val srcFile = @Suppress("DEPRECATION") createTempFile()
+        val dstFile = @Suppress("DEPRECATION") createTempFile()
         try {
             srcFile.writeText("Hello, World!")
             assertFailsWith(FileAlreadyExistsException::class, "copy do not overwrite existing file") {
@@ -493,8 +509,8 @@ class FilesTest {
 
     @Test fun copyToNameWithoutParent() {
         val currentDir = File("").absoluteFile!!
-        val srcFile = createTempFile()
-        val dstFile = createTempFile(directory = currentDir)
+        val srcFile = @Suppress("DEPRECATION") createTempFile()
+        val dstFile = @Suppress("DEPRECATION") createTempFile(directory = currentDir)
         try {
             srcFile.writeText("Hello, World!", Charsets.UTF_8)
             dstFile.delete()
@@ -512,7 +528,7 @@ class FilesTest {
     }
 
     @Test fun deleteRecursively() {
-        val dir = createTempDir()
+        val dir = @Suppress("DEPRECATION") createTempDir()
         dir.delete()
         dir.mkdir()
         val subDir = File(dir, "subdir");
@@ -563,6 +579,7 @@ class FilesTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test fun copyRecursively() {
         val src = createTempDir()
         val dst = createTempDir()
@@ -629,6 +646,7 @@ class FilesTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test fun copyRecursivelyWithOverwrite() {
         val src = createTempDir()
         val dst = createTempDir()
@@ -675,7 +693,7 @@ class FilesTest {
     }
 
     @Test fun helpers2() {
-        val file = createTempFile()
+        val file = @Suppress("DEPRECATION") createTempFile()
         val writer = file.printWriter()
         val str1 = "Hello, world!"
         val str2 = "Everything is wonderful!"
