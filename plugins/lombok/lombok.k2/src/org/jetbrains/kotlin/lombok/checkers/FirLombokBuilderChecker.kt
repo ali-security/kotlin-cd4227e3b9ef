@@ -198,7 +198,11 @@ object FirLombokBuilderChecker : FirRegularClassChecker(MppCheckerKind.Platform)
         }
     }
 
-    /** Whether [this] expression reads a `this` of [classSymbol], explicitly or as an implicit receiver. */
+    /**
+     * Whether [this] expression reads a `this` of [classSymbol], explicitly or as an implicit receiver. A lambda
+     * counts even when it is not called in place: it still captures the instance when it is created, and `build()`
+     * creates it with no instance to capture.
+     */
     private fun FirExpression.usesInstanceOf(classSymbol: FirRegularClassSymbol): Boolean {
         var found = false
         accept(object : FirVisitorVoid() {

@@ -9,9 +9,11 @@ fun next(): Int = ++counter
 @Builder
 class Entity(
     @Builder.Default val a: Int = 1,
-    // Not evaluatable at compile time: refers to an earlier parameter
+    // Not evaluatable at compile time: refers to an earlier parameter,
+    // however builder in runtime may calculate it (no instance access)
     @Builder.Default val b: Int = a + 1,
-    // Not evaluatable at compile time: calls a function
+    // Not evaluatable at compile time: calls a function,
+    // however builder in runtime may calculate it (no instance access)
     @Builder.Default val c: Int = next(),
     @Builder.Default val d: Int = X + Y,
 ) {
