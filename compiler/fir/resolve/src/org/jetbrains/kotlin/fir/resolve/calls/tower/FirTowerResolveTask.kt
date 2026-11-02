@@ -325,7 +325,7 @@ internal open class FirTowerResolveTask(
                 runResolverForExpressionReceiver(
                     info.replaceExplicitReceiver(stubReceiver),
                     stubReceiver,
-                    parentGroup = TowerGroup.QualifierValue,
+                    parentGroup = TowerGroup.QualifierAsTypeLhsForCallableReference,
                 )
             }
 
