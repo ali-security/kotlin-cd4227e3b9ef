@@ -11,16 +11,20 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollectorWithDiagnosticId
 
 internal class MessageReportingMessageCollectorWithDiagnosticId(private val messageReporter: (Message) -> Unit) :
     MessageCollectorWithDiagnosticId {
+    private var hasErrors = false
+
     override fun clear() {
         messageReporter(Message.CompilerMessage.Clear)
+        hasErrors = false
     }
 
     override fun hasErrors(): Boolean {
-        return false
+        return hasErrors
     }
 
     override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageSourceLocation?) {
         messageReporter(Message.CompilerMessage.Report(severity, message, location, diagnosticId = null))
+        hasErrors = hasErrors || severity.isError
     }
 
     override fun report(
