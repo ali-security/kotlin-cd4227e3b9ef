@@ -22,15 +22,29 @@
 #include "Exceptions.h"
 #include "Types.h"
 
-#if __has_builtin(__builtin_roundeven) && (defined(__aarch64__) || defined(__SSE4_1__))
-// On aarch64 and on x86 with SSE 4.1, LLVM emits __builtin_roundeven as instructions, on other targets it emits a call
-// to the actual roundeven function, which is not present in the libc version(s) that Kotlin runtime currently depends on
-// on Linux and Windows, leading to linking errors on those platforms, hence the fallback path.
+#if __has_builtin(__builtin_roundeven) && __has_builtin(__builtin_roundevenf) && \
+    (defined(__aarch64__) || defined(__SSE4_1__))
+// On aarch64 and on x86 with SSE 4.1, LLVM emits __builtin_roundeven[f] as instructions, on other targets it emits a
+// call to the actual roundeven function, which is not present in the libc version(s) that Kotlin runtime currently
+// depends on on Linux and Windows, leading to linking errors on those platforms, hence the fallback path.
 //
-// Once all platforms have roundeven available, the fallback path can be removed.
+// Once all supported targets can use __builtin_roundeven[f] without relying on unavailable libc symbols, the runtime
+// SSE 4.1 dispatch and fallback paths can be removed.
 #define KONAN_USE_BUILTIN_ROUNDEVEN 1
 #else
 #define KONAN_USE_BUILTIN_ROUNDEVEN 0
+#endif
+// Even if we can't use the builtins unconditionally, we are still able to:
+// - compile SSE 4.1-targeted functions calling the builtins
+// - use __builtin_cpu_supports("sse4.1") in runtime and call those if the check passes
+#if !KONAN_USE_BUILTIN_ROUNDEVEN && defined(__x86_64__) && \
+    __has_builtin(__builtin_roundeven) && \
+    __has_builtin(__builtin_roundevenf) && \
+    __has_builtin(__builtin_cpu_supports) && \
+    __has_attribute(target)
+#define KONAN_USE_RUNTIME_SSE41_ROUNDEVEN 1
+#else
+#define KONAN_USE_RUNTIME_SSE41_ROUNDEVEN 0
 #endif
 
 #if (__MINGW32__ || __MINGW64__)
@@ -103,6 +117,20 @@ namespace {
 }
 #endif
 
+#if KONAN_USE_RUNTIME_SSE41_ROUNDEVEN
+namespace {
+    __attribute__((target("sse4.1")))
+    KDouble roundevenSse41(KDouble x) {
+        return __builtin_roundeven(x);
+    }
+
+    __attribute__((target("sse4.1")))
+    KFloat roundevenfSse41(KFloat x) {
+        return __builtin_roundevenf(x);
+    }
+}
+#endif
+
 extern "C" {
 
 // region Double math.
@@ -157,7 +185,11 @@ KDouble Kotlin_math_floor(KDouble x) { return floor(x); }
 KDouble Kotlin_math_round(KDouble x) {
 #if KONAN_USE_BUILTIN_ROUNDEVEN
     return __builtin_roundeven(x);
-#else
+#elif KONAN_USE_RUNTIME_SSE41_ROUNDEVEN
+    if (__builtin_cpu_supports("sse4.1")) {
+        return roundevenSse41(x);
+    }
+#endif
     // Check if x is already integral, infinity or NaN. The inversion allows it to also catch NaNs.
     // It also guarantees that x can be cast to int64_t below without undefined behavior.
     if (!(fabs(x) < 0x1p52)) {
@@ -179,7 +211,6 @@ KDouble Kotlin_math_round(KDouble x) {
     }
 
     return copysign(rounded, x);
-#endif
 }
 
 KDouble Kotlin_math_abs(KDouble x) { return fabs(x); }
@@ -261,7 +292,11 @@ KFloat Kotlin_math_floorf(KFloat x) { return floorf(x); }
 KFloat Kotlin_math_roundf(KFloat x) {
 #if KONAN_USE_BUILTIN_ROUNDEVEN
     return __builtin_roundevenf(x);
-#else
+#elif KONAN_USE_RUNTIME_SSE41_ROUNDEVEN
+    if (__builtin_cpu_supports("sse4.1")) {
+        return roundevenfSse41(x);
+    }
+#endif
     // Check if x is already integral, infinity or NaN. The inversion allows it to also catch NaNs.
     // It also guarantees that x can be cast to int32_t below without undefined behavior.
     if (!(fabsf(x) < 0x1p23f)) {
@@ -283,7 +318,6 @@ KFloat Kotlin_math_roundf(KFloat x) {
     }
 
     return copysignf(rounded, x);
-#endif
 }
 
 KFloat Kotlin_math_absf(KFloat x) { return fabsf(x); }
