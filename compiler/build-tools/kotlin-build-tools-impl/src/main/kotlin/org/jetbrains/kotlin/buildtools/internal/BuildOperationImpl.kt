@@ -54,14 +54,14 @@ internal abstract class BuildOperationImpl<R> : BuildOperation<R>, BuildOperatio
     @Transient
     open val compilerMessageRenderer: CompilerMessageRenderer = DefaultCompilerMessageRenderer
 
+    override fun beforeSerialization(logger: KotlinLogger): List<MessageVisitor> = buildList {
+        metricsCollector?.let { add(MetricsCollectorVisitor(it)) }
+    }
+
     override fun afterDeserialization(messageReporter: (Message) -> Unit, compilerFacade: CompilerServicesFacadeBase?) {
         if (hasMetricsCollector) {
             metricsCollector = MessageReportingMetricsCollector(messageReporter)
         }
-    }
-
-    override fun beforeSerialization(logger: KotlinLogger): List<MessageVisitor> = buildList {
-        metricsCollector?.let { add(MetricsCollectorVisitor(it)) }
     }
 
     @Suppress("UNCHECKED_CAST")
