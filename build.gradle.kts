@@ -139,7 +139,11 @@ fun checkJDK() {
 rootProject.apply {
     from(rootProject.file("gradle/versions.gradle.kts"))
     from(rootProject.file("gradle/report.gradle.kts"))
-    from(rootProject.file("gradle/javaInstrumentation.gradle.kts"))
+    // The javac2 @NotNull instrumenter ships only in the IntelliJ SDK; the stdlib-only build
+    // (KOTLIN_BUILD_STDLIB_ONLY=true) has no SDK, and stdlib's Java sources carry no @NotNull.
+    if (System.getenv("KOTLIN_BUILD_STDLIB_ONLY") != "true") {
+        from(rootProject.file("gradle/javaInstrumentation.gradle.kts"))
+    }
     from(rootProject.file("gradle/jps.gradle.kts"))
 }
 
@@ -281,7 +285,9 @@ val gradlePluginProjects = listOf(
 
 apply {
     from("libraries/commonConfiguration.gradle")
-    from("libraries/configureGradleTools.gradle")
+    if (findProject(":kotlin-gradle-plugin") != null) {
+        from("libraries/configureGradleTools.gradle")
+    }
 }
 
 apply {
@@ -325,7 +331,7 @@ allprojects {
         maven(protobufRepo)
         maven(intellijRepo)
         maven("https://dl.bintray.com/kotlin/ktor")
-        maven("https://kotlin.bintray.com/kotlin-dependencies")
+        maven("https://redirector.kotlinlang.org/maven/kotlin-dependencies")
         maven("https://jetbrains.bintray.com/intellij-third-party-dependencies")
         bootstrapKotlinRepo?.let(::maven)
         internalKotlinRepo?.let(::maven)

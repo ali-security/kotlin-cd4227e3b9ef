@@ -10,10 +10,10 @@ buildscript {
     repositories {
         if (cacheRedirectorEnabled) {
             maven("https://cache-redirector.jetbrains.com/jcenter.bintray.com")
-            maven("https://cache-redirector.jetbrains.com/kotlin.bintray.com/kotlin-dependencies")
+            maven("https://redirector.kotlinlang.org/maven/kotlin-dependencies")
         } else {
             jcenter()
-            maven("https://kotlin.bintray.com/kotlin-dependencies")
+            maven("https://redirector.kotlinlang.org/maven/kotlin-dependencies")
         }
 
         buildSrcKotlinRepo?.let {
@@ -84,7 +84,7 @@ extra["customDepsOrg"] = "kotlin.build"
 repositories {
     jcenter()
     maven("https://jetbrains.bintray.com/intellij-third-party-dependencies/")
-    maven("https://kotlin.bintray.com/kotlin-dependencies")
+    maven("https://redirector.kotlinlang.org/maven/kotlin-dependencies")
     gradlePluginPortal()
 
     extra["buildSrcKotlinRepo"]?.let {
@@ -119,7 +119,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks["build"].dependsOn(":prepare-deps:build")
+if (System.getenv("KOTLIN_BUILD_SKIP_PREPARE_DEPS") == null) tasks["build"].dependsOn(":prepare-deps:build")
 
 allprojects {
     tasks.register("checkBuild")

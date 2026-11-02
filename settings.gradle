@@ -10,10 +10,10 @@ pluginManagement {
         if (cacheRedirectorEnabled == 'true') {
             logger.info("Using cache redirector for settings.gradle pluginManagement")
             maven { url "https://cache-redirector.jetbrains.com/plugins.gradle.org/m2" }
-            maven { url "https://cache-redirector.jetbrains.com/kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         } else {
             gradlePluginPortal()
-            maven { url "https://kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         }
     }
 
@@ -25,9 +25,9 @@ pluginManagement {
 buildscript {
     repositories {
         if (cacheRedirectorEnabled == 'true') {
-            maven { url "https://cache-redirector.jetbrains.com/kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         } else {
-            maven { url "https://kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         }
     }
     dependencies {
@@ -55,6 +55,29 @@ gradleEnterprise {
 }
 
 BuildCacheKt.setupBuildCache(settings)
+
+// Standalone build of the JVM standard library only (KOTLIN_BUILD_STDLIB_ONLY=true):
+// configures just the projects kotlin-stdlib and its test suite need, so the build
+// does not depend on the IntelliJ SDK and IDE/compiler-only third-party repositories.
+if (System.getenv("KOTLIN_BUILD_STDLIB_ONLY") == "true") {
+    include ":prepare:build.version",
+            ":core:builtins",
+            ":kotlin-stdlib-common",
+            ":kotlin-stdlib",
+            ":kotlin-test",
+            ":kotlin-test:kotlin-test-common",
+            ":kotlin-test:kotlin-test-annotations-common",
+            ":kotlin-test:kotlin-test-jvm",
+            ":kotlin-test:kotlin-test-junit"
+    project(':kotlin-stdlib-common').projectDir = "$rootDir/libraries/stdlib/common" as File
+    project(':kotlin-stdlib').projectDir = "$rootDir/libraries/stdlib/jvm" as File
+    project(':kotlin-test').projectDir = "$rootDir/libraries/kotlin.test" as File
+    project(':kotlin-test:kotlin-test-common').projectDir = "$rootDir/libraries/kotlin.test/common" as File
+    project(':kotlin-test:kotlin-test-annotations-common').projectDir = "$rootDir/libraries/kotlin.test/annotations-common" as File
+    project(':kotlin-test:kotlin-test-jvm').projectDir = "$rootDir/libraries/kotlin.test/jvm" as File
+    project(':kotlin-test:kotlin-test-junit').projectDir = "$rootDir/libraries/kotlin.test/junit" as File
+    return
+}
 
 // modules
 include ":kotlin-build-common",

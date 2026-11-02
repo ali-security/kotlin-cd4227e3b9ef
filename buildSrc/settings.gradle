@@ -14,9 +14,9 @@ pluginManagement {
 buildscript {
     repositories {
         if (cacheRedirectorEnabled == 'true') {
-            maven { url "https://cache-redirector.jetbrains.com/kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         } else {
-            maven { url "https://kotlin.bintray.com/kotlin-dependencies" }
+            maven { url "https://redirector.kotlinlang.org/maven/kotlin-dependencies" }
         }
     }
     dependencies {
@@ -28,7 +28,9 @@ def buildProperties = BuildPropertiesKt.getKotlinBuildPropertiesForSettings(sett
 
 BuildCacheKt.setupBuildCache(settings)
 
-include "prepare-deps"
+if (System.getenv("KOTLIN_BUILD_SKIP_PREPARE_DEPS") == null) {
+    include "prepare-deps"
+}
 
 if (buildProperties.includeCidrPlugins) {
     logger.info("Including CIDR plugins in buildSrc/settings.gradle")
