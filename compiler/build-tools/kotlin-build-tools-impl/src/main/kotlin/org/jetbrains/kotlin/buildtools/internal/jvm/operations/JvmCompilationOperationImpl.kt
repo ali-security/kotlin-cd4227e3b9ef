@@ -330,7 +330,6 @@ internal class JvmCompilationOperationImpl private constructor(
         } else null
         val configurationInputs =
             makeConfigurationInputs(snapshotBasedIcOptionsAccessor, verifiedPreciseJavaTracking)
-        var compilationError: Throwable? = null
         val compilationResult = try {
             incrementalCompiler.compile(
                 kotlinSources,
@@ -340,14 +339,15 @@ internal class JvmCompilationOperationImpl private constructor(
                 fileLocations,
                 configurationInputs,
             )
-        } catch (e: Throwable) {
-            compilationError = e
-            throw e
         } finally {
-            try {
-                eventReporter?.let { icEventCollector?.collectEvents(it.events.toIcEvents()) }
-            } catch (e: Throwable) {
-                if (compilationError != null) compilationError.addSuppressed(e) else throw e
+            runCatching {
+                eventReporter?.let { reporter ->
+                    icEventCollector?.collectEvents(reporter.events.toIcEvents())
+                }
+            }.onFailure { collectionError ->
+                loggerAdapter.kotlinLogger.warn(
+                    "Failed to collect incremental compilation events:\n${collectionError.stackTraceToString()}"
+                )
             }
         }.asCompilationResult
 
