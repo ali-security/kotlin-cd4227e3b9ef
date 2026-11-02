@@ -142,7 +142,7 @@ abstract class AbstractBuilderGenerator<T : AbstractBuilder>(session: FirSession
             // Currently it's not important if property has backing field or not to include it in builder,
             // but even if it is included, we don't want to report anything as we consider the situation as questionable.
             // See also KT-90822.
-            !resolveInProcess && !hasBackingField -> null
+            !resolveInProcess && !hasBackingField && hasExplicitReturnType-> null
             // If we have parameters, we never include any properties,
             // but we don't report ones that have matching names (as in fact they are INCLUDED as parameters).
             name in parameterNames -> NotIncludedReason.OTHER_REASON_THAT_WE_DONT_REPORT
